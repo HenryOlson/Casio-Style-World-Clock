@@ -7,10 +7,10 @@
  */
 #include <Logger.h>
 #include <esp_adc_cal.h>
+#include "CLI.h"
 #include "pin_config.h"
 #include "Network.h"
 #include "CasioClock.hpp"
-#include "CLI.hpp"
 #include "Voltage.hpp"
 
 // change settings button (top)
@@ -136,7 +136,7 @@ void cpuStats() {
  * CLI Commands
  */
 // update the time from the network service
-int cliNtpUpdate(int argc = 0, char** argv = NULL) {
+CLI_COMMAND(cliNtpUpdate) {
         Logger::notice("checking network time");
         theClock.update();
         delay(20);
@@ -144,7 +144,7 @@ int cliNtpUpdate(int argc = 0, char** argv = NULL) {
 }
 
 // show the device uptime
-int cliUptime(int argc = 0, char** argv = NULL) {
+CLI_COMMAND(cliUptime) {
     // seconds
     int upTime = millis() / 1000;
     int secs = upTime % 60;
@@ -160,14 +160,14 @@ int cliUptime(int argc = 0, char** argv = NULL) {
     // days
     int days = upTime / 24;
 
-    cli.printf("uptime %dd %02d:%02d:%02d", days, hrs, mins, secs);
+    dev->printf("uptime %dd %02d:%02d:%02d\r\n", days, hrs, mins, secs);
     return 0;
 }
 
 // show the display update frames per second (loop counter)
 int fps = 0;
-int cliFPS(int argc = 0, char** argv = NULL) {
-    cli.printf("%d FPS", fps);
+CLI_COMMAND(cliFPS) {
+    dev->printf("%d FPS\r\n", fps);
     return 0;
 }
 
@@ -181,17 +181,17 @@ Usage: mode [lock|map|prime|color]\r\n\
     next  - advance to next mode\r\n\
 mode without arguments advances to next mode"
 ;
-int cliSetMode(int argc = 0, char* argv[] = NULL) {
+CLI_COMMAND(cliSetMode) {
     return theClock.setMode(argc, argv);
 }
 
 // advance to the next setting in the current mode
-int cliNextSetting(int argc = 0, char** argv = NULL) {
+CLI_COMMAND(cliNextSetting) {
     return theClock.nextSetting(argc, argv);
 }
 
 // set clock time zone directly
-int cliSetLocation(int argc = 0, char** argv = NULL) {
+CLI_COMMAND(cliSetLocation) {
     int stat = 0;
     if(argc == 3) {
         String code = String(argv[2]);
@@ -199,29 +199,29 @@ int cliSetLocation(int argc = 0, char** argv = NULL) {
         if(strcmp(argv[1], "map") == 0) {
             stat = (theClock.changeMapLocation((char*)code.c_str()) ? 0 : 1);
             if(stat != 0)
-                cli.printf("invalid location code '%s'", argv[2]);
+                dev->printf("invalid location code '%s'\r\n", argv[2]);
         } else if(strcmp(argv[1], "prime") == 0) {
             stat = (theClock.changePrimeLocation((char*)code.c_str()) ? 0 : 1);
             if(stat != 0)
-                cli.printf("invalid location code '%s'", argv[2]);
+                dev->printf("invalid location code '%s'\r\n", argv[2]);
         } else {
-            cli.printf("invalid clock name '%s'", argv[1]);
+            dev->printf("invalid clock name '%s'\r\n", argv[1]);
             stat = 2;
         }
     } else {
-        cli.printf("invalid argument count %d", argc);
-        return CLI_ARG_COUNT;
+        dev->printf("invalid argument count %d\r\n", argc);
+        return 1000;
     }
     return stat;
 }
 
-int cliSetFormat(int argc = 0, char* argv[] = NULL) {
+CLI_COMMAND(cliSetFormat) {
     return theClock.changeTimeFormat(argc, argv);
 }
 
 // reboot the device
-int cliReboot(int argc, char* argv[]) {
-    cli.printf("Rebooting ...");
+CLI_COMMAND(cliReboot) {
+    dev->printf("Rebooting ...");
     ESP.restart();
     return 0;           // keep the compiler happy
 }
@@ -233,7 +233,7 @@ Usage: wifi [ssid pass]\r\n\
     pass  - wifi password\r\n\
 wifi without arguments connects with current saved settings"
 ;
-int cliStartWiFi(int argc, char* argv[]) {
+CLI_COMMAND(cliStartWiFi) {
     switch(argc) {
         case 1:
             return (Network::initWiFi() ? 0 : 1);
@@ -242,18 +242,18 @@ int cliStartWiFi(int argc, char* argv[]) {
             return (Network::initWiFi(argv[1], argv[2]) ? 0 : 2);
             break;
         default:
-            cli.printf("ERROR: wifi - invalid argument count - %d", argc);
+            dev->printf("ERROR: wifi - invalid argument count - %d\r\n", argc);
             return 3;
     }
     return 0;
 }
 
 // set the logging level
-int cliSetLog(int argc, char* argv[]) {
+CLI_COMMAND(cliSetLog) {
     static Logger::Level lastLevel = Logger::Level::VERBOSE;
     switch(argc) {
         case 1:     // show log level
-            cli.printf("log level %s", Logger::asString(Logger::getLogLevel()));
+            dev->printf("log level %s\r\n", Logger::asString(Logger::getLogLevel()));
             break;
         case 2:     // on / off / level
             if(strcmp(argv[1], "level") == 0) {
@@ -264,10 +264,10 @@ int cliSetLog(int argc, char* argv[]) {
                 lastLevel = Logger::getLogLevel();
                 Logger::setLogLevel(Logger::Level::SILENT);
             } else {
-                cli.printf("invalid log command '%s'", argv[1]);
+                dev->printf("invalid log command '%s'\r\n", argv[1]);
                 return 2;
             }
-            cli.printf("log level %s", Logger::asString(Logger::getLogLevel()));
+            dev->printf("log level %s\r\n", Logger::asString(Logger::getLogLevel()));
             break;
         case 3:     // level <level>, e.g. level verbose
             if(strcmp(argv[1], "level") == 0) {
@@ -284,24 +284,24 @@ int cliSetLog(int argc, char* argv[]) {
                 } else if(strcmp(argv[2], "silent") == 0) {
                     Logger::setLogLevel(Logger::Level::SILENT);
                 } else {
-                    cli.printf("invalid log level '%s'", argv[2]);
+                    dev->printf("invalid log level '%s'\r\n", argv[2]);
                     return 1;
                 }
                 lastLevel = Logger::getLogLevel();
             } else {
-                cli.printf("invalid log command '%s'", argv[1]);
+                dev->printf("invalid log command '%s'\r\n", argv[1]);
                 return 2;
             }
-            cli.printf("log level %s", Logger::asString(Logger::getLogLevel()));
+            dev->printf("log level %s\r\n", Logger::asString(Logger::getLogLevel()));
             break;
         default:
-            cli.printf("Invalid log arguments");
+            dev->printf("Invalid log arguments\r\n");
             return 3;
     }
     return 0;
 }
 
-int cliScreen(int argc = 0, char* argv[] = NULL) {
+CLI_COMMAND(cliScreen) {
     switch(argc) {
         case 1:
             // show the display setting
@@ -330,13 +330,13 @@ int cliScreen(int argc = 0, char* argv[] = NULL) {
 }
 
 // go to sleep
-int cliSleep(int argc = 0, char* argv[] = NULL) {
+CLI_COMMAND(cliSleep) {
     lightSleep();
     return 0;
 }
 
 // configure wake triggers
-int cliWake(int argc, char* argv[]) {
+CLI_COMMAND(cliWake) {
     int sleepSeconds;
     switch(argc) {
         case 1:
@@ -357,7 +357,7 @@ int cliWake(int argc, char* argv[]) {
             } else
                 break;
     }
-    cli.printf("invalid wake command");
+    dev->printf("invalid wake command\r\n");
     return 1;
 }
 
@@ -367,18 +367,18 @@ int cliWake(int argc, char* argv[]) {
 // my observation is that with no battery I get 4768-4778
 // with battery up to 4814 (fully charged), so no way do detect if line power is available
 if (v1 > 4300) {
-    cli.printf("battery not present");
+    dev->printf("battery not present\r\n");
 }
 */
 // monitor / show battery voltage
-int cliBattery(int argc = 0, char* argv[] = NULL) {
+CLI_COMMAND(cliBattery) {
     switch (argc) {
         case 1:
-            cli.printf("voltage: %dmv", volts.read());
+            dev->printf("voltage: %dmv\r\n", volts.read());
             return 0;
         case 2:
             if(strcmp(argv[1], "volts") == 0) {
-                cli.printf("voltage: %dmv", volts.read());
+                dev->printf("voltage: %dmv\r\n", volts.read());
                 return 0;
             }
             break;
@@ -400,13 +400,13 @@ int cliBattery(int argc = 0, char* argv[] = NULL) {
             }
             break;
     }
-    cli.printf("invalid %s command", argv[0]);
+    dev->printf("invalid %s command\r\n", argv[0]);
     return 1;
 }
 
 // show / set CPU speed
 // assuming 40Mhz XTAL
-int cliCPU(int argc = 0, char* argv[] = NULL) {
+CLI_COMMAND(cliCPU) {
     switch(argc) {
         case 1:
             break;
@@ -428,23 +428,23 @@ int cliCPU(int argc = 0, char* argv[] = NULL) {
                         setCpuFrequencyMhz(freq);
                         break;
                     default:
-                        cli.printf("invalid cpu speed '%s'", argv[1]);
+                        dev->printf("invalid cpu speed '%s'\r\n", argv[1]);
                         return 1;
                 }
             }
             break;
         default:
-            cli.printf("invalid cpu command");
+            dev->printf("invalid cpu command\r\n");
             return 2;
     }
-    cli.printf("CPU freq %d MHz", getCpuFrequencyMhz());
+    dev->printf("CPU freq %d MHz\r\n", getCpuFrequencyMhz());
     return 0;
 }
 
-int cliPower(int argc = 0, char* argv[] = NULL) {
+CLI_COMMAND(cliPower) {
     switch(argc) {
         case 1:
-            cli.printf("power state is %s", powerStateHigh ? "high" : "low");
+            dev->printf("power state is %s\r\n", powerStateHigh ? "high" : "low");
             break;
         case 2:
             if(strcmp(argv[1], "low") == 0) {
@@ -452,12 +452,12 @@ int cliPower(int argc = 0, char* argv[] = NULL) {
             } else if(strcmp(argv[1], "high") == 0) {
                 powerHigh();
             } else {
-                cli.printf("invalid power command %s", argv[1]);
+                dev->printf("invalid power command %s\r\n", argv[1]);
                 return 1;
             }
             break;
         default:
-            cli.printf("invalid power command");
+            dev->printf("invalid power command\r\n");
             return 2;
     }
     return 0;
@@ -500,6 +500,26 @@ void setup() {
     }
 
     // configure CLI commands
+    CLI.setDefaultPrompt("clock> ");
+    //CLI.onConnect(cliOnConnect);
+    CLI.addCommand("log", cliSetLog);       //, "logging control (on, off, level ..)");
+    CLI.addCommand("mode", cliSetMode);       //, "change modes (lock,map,prime,format,color), default next", setModeHelp);
+    CLI.addCommand("next", cliNextSetting);       //, "next setting in current mode");
+    CLI.addCommand("location", cliSetLocation);       //, "location [ map | prime ] <code>");
+    CLI.addCommand("format", cliSetFormat);       //, "format [ show | 12 | 24 ]");
+    CLI.addCommand("wifi", cliStartWiFi);       //, "(re)connect WiFi", startWiFiHelp);
+    CLI.addCommand("screen", cliScreen);       //, "screen [ on | off ]");
+    CLI.addCommand("wake", cliWake);       //, "wake [ button | after <seconds> ]");
+    CLI.addCommand("sleep", cliSleep);       //, "sleep");
+    CLI.addCommand("battery", cliBattery);       //, "battery [ volts | show | monitor ( on | off | clear) ]");
+    CLI.addCommand("power", cliPower);       //, "power [ low | high ]");
+    CLI.addCommand("cpu", cliCPU);       //, "cpu [ show | fast | slow ]");
+    CLI.addCommand("update", cliNtpUpdate);       //, "update time from network (NTP)");
+    CLI.addCommand("fps", cliFPS);       //, "show display update FPS");
+    CLI.addCommand("uptime", cliUptime);    //, "show uptime");
+    CLI.addCommand("reboot", cliReboot);    //, "reboot the clock");
+    CLI.addClient(Serial);
+/*
     cli.add("log", cliSetLog, "logging control (on, off, level ..)");
     cli.add("mode", cliSetMode, "change modes (lock,map,prime,format,color), default next", setModeHelp);
     cli.add("next", cliNextSetting, "next setting in current mode");
@@ -517,6 +537,7 @@ void setup() {
     cli.add("uptime", cliUptime, "show uptime");
     cli.add("reboot", cliReboot, "reboot the clock");
     cli.begin("clock> ");
+*/
 
     Logger::notice("Setup done");
 
@@ -528,7 +549,7 @@ int lcdStart = 0;
 int batStart = 0;
 void smallloop() {
     // process Serial command line input
-    cli.read();
+    CLI.process();
 }
 
 void loop() {
@@ -611,10 +632,10 @@ void loop() {
     // update from network time once per 15 minutes
     // complaints from WiFiUDP when in low power mode
     if(powerStateHigh && ((millis() % 900000) < 20)) {
-        cliNtpUpdate();
+        theClock.update();
     }
     
-    // process Serial command line input
-    cli.read();
+    // process command line input
+    CLI.process();
 
 }
