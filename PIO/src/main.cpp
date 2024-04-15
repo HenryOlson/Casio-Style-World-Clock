@@ -47,7 +47,7 @@ char* fmt(const char* fmt, ...) {
 void clockLogger(Logger::Level level, const char* module, const char* message) {
   static char buf[25];
 
-  // timstamp
+  // timestamp
   sprintf(buf, "[%8ld]", millis());
   Serial.print(buf);
 
@@ -137,9 +137,9 @@ void cpuStats() {
  */
 // update the time from the network service
 CLI_COMMAND(cliNtpUpdate) {
-        Logger::notice("checking network time");
-        theClock.update();
-        delay(20);
+        if(!theClock.update()) {
+            return 1;
+        }
         return 0;
 }
 

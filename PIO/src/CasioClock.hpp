@@ -20,7 +20,7 @@ CasioClock();
 void ntpOff();
 void ntpOn();
 void localize();
-void update();
+boolean update();
 boolean changeMapLocation(char* code = NULL);
 boolean changePrimeLocation(char* code = NULL);
 boolean isTimeSet();
