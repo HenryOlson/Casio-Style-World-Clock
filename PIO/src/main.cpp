@@ -461,6 +461,13 @@ CLI_COMMAND(cliPower) {
     return 0;
 }
 
+CLI_COMMAND(cliWelcome) {
+    dev->println("Welcome to the clock CLI.");
+    dev->println("Type 'help' to list commands.");
+    dev->println();
+    return 0;
+}
+
 /*
  * Arduino core
  */
@@ -470,7 +477,7 @@ void setup() {
 
     // use the following line to delay startup until serial is connected
     // can be useful for development, off for deployment
-    //while(!Serial) continue;
+    while(!Serial) continue;
 
     // Configure logger
     //Logger::setLogLevel(Logger::VERBOSE);
@@ -516,6 +523,7 @@ void setup() {
     CLI.addCommand("fps", cliFPS, "show display update FPS");
     CLI.addCommand("uptime", cliUptime, "show uptime");
     CLI.addCommand("reboot", cliReboot, "reboot the clock");
+    CLI.onConnect(cliWelcome);
     CLI.addClient(Serial);
 
     Logger::notice("Setup done");
