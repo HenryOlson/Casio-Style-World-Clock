@@ -72,8 +72,13 @@ boolean CasioClock::setDisplay(int turnOn) {
     return display->setDisplay(turnOn);
 }
 
-void CasioClock::update() {
-    timeClient.update();
+boolean CasioClock::update() {
+    Logger::notice("checking network time");
+    if(!timeClient.update()) {
+        Logger::warning("Unable to update time");
+        return false;
+    }
+    return true;
 }
 
 boolean CasioClock::changeMapLocation(char *name) {

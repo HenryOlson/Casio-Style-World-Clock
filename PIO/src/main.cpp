@@ -173,7 +173,6 @@ CLI_COMMAND(cliFPS) {
 
 // set the mode (without args, advances to next like the mode button)
 const char* setModeHelp = "\
-Usage: mode [lock|map|prime|color]\r\n\
     lock  - disable the set button\r\n\
     map   - change the map time\r\n\
     prime - change the timezone for the large display\r\n\
@@ -228,7 +227,6 @@ CLI_COMMAND(cliReboot) {
 
 // (re)start the wifi connection, either with current credentials or with new
 const char* startWiFiHelp = "\
-Usage: wifi [ssid pass]\r\n\
     ssid  - ssid to connect to\r\n\
     pass  - wifi password\r\n\
 wifi without arguments connects with current saved settings"
@@ -502,42 +500,23 @@ void setup() {
     // configure CLI commands
     CLI.setDefaultPrompt("clock> ");
     //CLI.onConnect(cliOnConnect);
-    CLI.addCommand("log", cliSetLog);       //, "logging control (on, off, level ..)");
-    CLI.addCommand("mode", cliSetMode);       //, "change modes (lock,map,prime,format,color), default next", setModeHelp);
-    CLI.addCommand("next", cliNextSetting);       //, "next setting in current mode");
-    CLI.addCommand("location", cliSetLocation);       //, "location [ map | prime ] <code>");
-    CLI.addCommand("format", cliSetFormat);       //, "format [ show | 12 | 24 ]");
-    CLI.addCommand("wifi", cliStartWiFi);       //, "(re)connect WiFi", startWiFiHelp);
-    CLI.addCommand("screen", cliScreen);       //, "screen [ on | off ]");
-    CLI.addCommand("wake", cliWake);       //, "wake [ button | after <seconds> ]");
-    CLI.addCommand("sleep", cliSleep);       //, "sleep");
-    CLI.addCommand("battery", cliBattery);       //, "battery [ volts | show | monitor ( on | off | clear) ]");
-    CLI.addCommand("power", cliPower);       //, "power [ low | high ]");
-    CLI.addCommand("cpu", cliCPU);       //, "cpu [ show | fast | slow ]");
-    CLI.addCommand("update", cliNtpUpdate);       //, "update time from network (NTP)");
-    CLI.addCommand("fps", cliFPS);       //, "show display update FPS");
-    CLI.addCommand("uptime", cliUptime);    //, "show uptime");
-    CLI.addCommand("reboot", cliReboot);    //, "reboot the clock");
+    CLI.addCommand("log", cliSetLog, "control logging", "log (on, off, level <level>");
+    CLI.addCommand("mode", cliSetMode, "change modes", "mode (lock,map,prime,format,color), default next", setModeHelp);
+    CLI.addCommand("next", cliNextSetting, "choose next setting in current mode");
+    CLI.addCommand("location", cliSetLocation, "set location for clock", "location [ map | prime ] <code>");
+    CLI.addCommand("format", cliSetFormat, "set time format", "format [ show | 12 | 24 ]");
+    CLI.addCommand("wifi", cliStartWiFi, "(re)connect WiFi", "wifi [ssid pwd]", startWiFiHelp);
+    CLI.addCommand("screen", cliScreen, "turn screen on or off", "screen [ on | off ]");
+    CLI.addCommand("wake", cliWake, "set wakeup trigger", "wake [ button | after <seconds> ]");
+    CLI.addCommand("sleep", cliSleep, "enter light sleep", "sleep");
+    CLI.addCommand("battery", cliBattery, "show or monitor battery voltage", "battery [ volts | show | monitor ( on | off | clear) ]");
+    CLI.addCommand("power", cliPower, "show or set power level", "power [ low | high ]");
+    CLI.addCommand("cpu", cliCPU, "show or set cpu speed", "cpu [ show | fast | slow ]");
+    CLI.addCommand("update", cliNtpUpdate, "update time from network (NTP)");
+    CLI.addCommand("fps", cliFPS, "show display update FPS");
+    CLI.addCommand("uptime", cliUptime, "show uptime");
+    CLI.addCommand("reboot", cliReboot, "reboot the clock");
     CLI.addClient(Serial);
-/*
-    cli.add("log", cliSetLog, "logging control (on, off, level ..)");
-    cli.add("mode", cliSetMode, "change modes (lock,map,prime,format,color), default next", setModeHelp);
-    cli.add("next", cliNextSetting, "next setting in current mode");
-    cli.add("location", cliSetLocation, "location [ map | prime ] <code>");
-    cli.add("format", cliSetFormat, "format [ show | 12 | 24 ]");
-    cli.add("wifi", cliStartWiFi, "(re)connect WiFi", startWiFiHelp);
-    cli.add("screen", cliScreen, "screen [ on | off ]");
-    cli.add("wake", cliWake, "wake [ button | after <seconds> ]");
-    cli.add("sleep", cliSleep, "sleep");
-    cli.add("battery", cliBattery, "battery [ volts | show | monitor ( on | off | clear) ]");
-    cli.add("power", cliPower, "power [ low | high ]");
-    cli.add("cpu", cliCPU, "cpu [ show | fast | slow ]");
-    cli.add("update", cliNtpUpdate, "update time from network (NTP)");
-    cli.add("fps", cliFPS, "show display update FPS");
-    cli.add("uptime", cliUptime, "show uptime");
-    cli.add("reboot", cliReboot, "reboot the clock");
-    cli.begin("clock> ");
-*/
 
     Logger::notice("Setup done");
 
@@ -547,11 +526,6 @@ int lastSecond = -1;
 int frameCount = 0;
 int lcdStart = 0;
 int batStart = 0;
-void smallloop() {
-    // process Serial command line input
-    CLI.process();
-}
-
 void loop() {
 
     // GUI background
