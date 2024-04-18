@@ -91,7 +91,7 @@ boolean MercatorPlotter::setNullIslandOffset(int latShift, int lonShift) {
 }
 
 MapPoint MercatorPlotter::plot(float lat, float lon) {
-// ToDo: test for valid lat / lon
+// test for valid lat / lon
 if(lat >= -90 and lat <= 90 and
     lon >= -180 and lon <= 180) {
 
@@ -106,7 +106,7 @@ if(lat >= -90 and lat <= 90 and
     // scale and shift
     y = this->mapCenterY - (this->map360width * y / (2 * PI)) + this->latShift + this->topLeftY;
 
-    // ToDo: test for valid image coordinates
+    // test for valid image coordinates
     if(x >= 0 and x <= this->imageWidth and
     y >= 0 and y <= this->imageHeight) {
     return MapPoint(x, y);

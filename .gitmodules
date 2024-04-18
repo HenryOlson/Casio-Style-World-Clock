@@ -1,0 +1,12 @@
+[submodule "PIO/lib/PIO/lib/AsyncTCP"]
+	path = PIO/lib/PIO/lib/AsyncTCP
+	url = https://github.com/me-no-dev/AsyncTCP.git
+[submodule "PIO/lib/ESPAsyncWebServer"]
+	path = PIO/lib/ESPAsyncWebServer
+	url = https://github.com/me-no-dev/ESPAsyncWebServer.git
+[submodule "PIO/lib/AsyncTCP"]
+	path = PIO/lib/AsyncTCP
+	url = https://github.com/me-no-dev/AsyncTCP.git
+[submodule "PIO/lib/CLI"]
+	path = PIO/lib/CLI
+	url = https://github.com/HenryOlson/CLI.git

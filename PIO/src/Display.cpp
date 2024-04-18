@@ -167,6 +167,7 @@ void Display::init() {
 
 void Display::changeBG() {
     static boolean bgVisible = false;
+    delay(5);
     // Code for changeBG
     if (!bgVisible) {
         Logger::verbose("Executing changeBG: Showing elements");
@@ -182,6 +183,7 @@ void Display::changeBG() {
 
     // Toggle the visibility state
     bgVisible = !bgVisible;
+    delay(5);
 }
 
 

@@ -186,7 +186,8 @@ CLI_COMMAND(cliSetMode) {
 
 // advance to the next setting in the current mode
 CLI_COMMAND(cliNextSetting) {
-    return theClock.nextSetting(argc, argv);
+    theClock.nextSetting(argc, argv);
+    return 0;
 }
 
 // set clock time zone directly
@@ -477,7 +478,7 @@ void setup() {
 
     // use the following line to delay startup until serial is connected
     // can be useful for development, off for deployment
-    while(!Serial) continue;
+    //while(!Serial) continue;
 
     // Configure logger
     //Logger::setLogLevel(Logger::VERBOSE);
@@ -504,17 +505,20 @@ void setup() {
         Logger::notice("WiFi not started, please enter SSID / password");
     }
 
+    // configure Web CLI
+    Network::initWebCLI("clock", "clock> ");
+
     // configure CLI commands
     CLI.setDefaultPrompt("clock> ");
     //CLI.onConnect(cliOnConnect);
-    CLI.addCommand("log", cliSetLog, "control logging", "log (on, off, level <level>");
+    CLI.addCommand("log", cliSetLog, "control logging", "log (on, off, level {level}");
     CLI.addCommand("mode", cliSetMode, "change modes", "mode (lock,map,prime,format,color), default next", setModeHelp);
     CLI.addCommand("next", cliNextSetting, "choose next setting in current mode");
-    CLI.addCommand("location", cliSetLocation, "set location for clock", "location [ map | prime ] <code>");
+    CLI.addCommand("location", cliSetLocation, "set location for clock", "location [ map | prime ] {code}");
     CLI.addCommand("format", cliSetFormat, "set time format", "format [ show | 12 | 24 ]");
     CLI.addCommand("wifi", cliStartWiFi, "(re)connect WiFi", "wifi [ssid pwd]", startWiFiHelp);
     CLI.addCommand("screen", cliScreen, "turn screen on or off", "screen [ on | off ]");
-    CLI.addCommand("wake", cliWake, "set wakeup trigger", "wake [ button | after <seconds> ]");
+    CLI.addCommand("wake", cliWake, "set wakeup trigger", "wake [ button | after {seconds} ]");
     CLI.addCommand("sleep", cliSleep, "enter light sleep", "sleep");
     CLI.addCommand("battery", cliBattery, "show or monitor battery voltage", "battery [ volts | show | monitor ( on | off | clear) ]");
     CLI.addCommand("power", cliPower, "show or set power level", "power [ low | high ]");

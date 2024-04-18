@@ -5,17 +5,93 @@
 #include <Logger.h>
 #include "Network.h"
 #include "CasioClock.hpp"
+#include "SPIFFS.h"
+#include "RWBufferStream.h"
 
 #define WIFI_KEY "WiFi"
+
+// required coupling
+extern CasioClock theClock;
+extern char* fmt(const char* fmt, ...);
 
 // WiFi configuration
 char Network::_ssid[MAX_SSID];
 char Network::_password[MAX_PW];
 Preferences Network::preferences;
 
-// required coupling
-extern CasioClock theClock;
-extern char* fmt(const char* fmt, ...);
+// web CLI
+String Network::cliHost;
+String Network::hostIP;
+String Network::cliPrompt;
+AsyncWebServer server(80);
+RWBufferStream cliBuffer(200,1500);
+
+// page processor
+String Network::processor(const String& var) {
+  if(var == "HOST"){
+    return cliHost;
+  } else if(var == "HOST_IP"){
+    return hostIP;
+  } else if(var == "CLI_PROMPT"){
+    return cliPrompt;
+  }
+  return String();
+}
+
+CLIClient* Network::cliClient;
+boolean Network::initWebCLI(const char* hostName, const char* prompt) {
+
+  cliHost = String(hostName);
+  cliPrompt = String(prompt);
+
+  Logger::notice("Initializing Web CLI");
+
+  // Initialize SPIFFS
+  if(!SPIFFS.begin(true)){
+    Logger::error("An Error has occurred while mounting SPIFFS");
+    return false;
+  }
+
+  // add CLI client for web server
+  cliClient = CLI.addClient(cliBuffer);
+
+  // add route for root / web page
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    Logger::notice("incoming request for root page");
+    request->send(SPIFFS, "/index.html", String(), false, processor);
+  });
+
+  // add route for command execution
+  server.on("/", HTTP_POST, [](AsyncWebServerRequest *request) {
+    AsyncWebParameter* cmd;
+    if(request->hasParam("cmd", true)) {
+        // get cmd parameter and value
+        AsyncWebParameter* cmdParm = request->getParam("cmd", true);
+        String cmdString = request->urlDecode(cmdParm->value());
+        Logger::notice(fmt("WiFi CLI - request: '%s'", cmdString));
+
+        // prepare buffer for CLI processing
+        cliBuffer.setInput(fmt("%s\n", (char*)cmdString.c_str()));
+        cliClient->echo(false);
+
+        // process the command
+        CLI.process();
+
+        char* resp = cliBuffer.getOutput();
+        request->send(200, "text/plain", resp);
+        cliBuffer.reset();
+        
+        Logger::verbose(fmt("WiFi CLI - response: '%s'", resp));
+    }
+  });
+
+  return true;
+}
+
+boolean Network::beginWebCLI() {
+    server.begin();
+    return true;
+}
 
 void Network::WiFiEvent(WiFiEvent_t event) {
 
@@ -58,7 +134,8 @@ void Network::WiFiEvent(WiFiEvent_t event) {
         case ARDUINO_EVENT_WIFI_STA_GOT_IP:
             Logger::verbose("begin WiFi IP event");
             ip = WiFi.localIP();
-            Logger::notice(fmt("Obtained IP address: %d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]));
+            hostIP = String(fmt("%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]));
+            Logger::notice(fmt("Obtained IP address: %s", hostIP));
 
             // Save network credentials if changed
             preferences.begin(WIFI_KEY);
@@ -92,6 +169,10 @@ void Network::WiFiEvent(WiFiEvent_t event) {
 
             // set local timezone
             theClock.localize();
+
+            Logger::verbose("Starting Web CLI");
+            Network::beginWebCLI();
+            Logger::notice("Started Web CLI");
 
             Logger::verbose("end WiFi IP event");
             break;

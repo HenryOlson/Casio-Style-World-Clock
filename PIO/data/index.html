@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <style>
+      textarea {
+        font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+      }
+    </style>
+
+    <title>CLI</title>
+  </head>
+
+  <body style="margin-top: 50">
+
+  <h2 style="text-align: center">CLI</h2>
+  <h3 style="text-align: center">%HOST% @ %HOST_IP%</h3>
+
+<form id="cli-form" class="mx-auto" style="width: 800px">
+
+  <div class="form-group">
+    <label for="console">Console</label>
+    <textarea id="console" class="form-control" rows="10"></textarea>
+  </div>
+
+  <div class="input-group mb-3">
+    <div class="input-group-prepend">
+      <span class="input-group-text">%CLI_PROMPT%</span>
+    </div>
+    <input id="command" type="text" class="form-control" aria-label="Command">
+  </div>
+
+</form>
+
+    <!-- Dependencies - jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+        crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+
+    <script>
+    /*
+    * Page script
+    */
+    var prompt = "%CLI_PROMPT%";
+
+    // append a line to the console
+    function consoleAppend(txt) {
+        // update the web console
+        var webConsole = $('#console');
+        webConsole.append(txt);
+        webConsole.scrollTop(webConsole.scrollHeight);
+        webConsole.scrollTop(webConsole[0].scrollHeight - webConsole.height());
+    }
+
+    // post a command to the server
+    function postCmd(cmd) {
+        $.ajax({
+          type: 'POST',
+          data: { "cmd": encodeURIComponent(cmd) },
+          success: function (data, textStatus, jqXHR) {
+              consoleAppend(data);
+          },
+          error: function (jqXHR, textStatus, errorThrown) {
+              console.log("error: " + textStatus);
+              console.log(errorThrown);
+          }
+        });
+    }
+
+    // hook form submit (return)
+    $(function() { //shorthand document.ready function
+        $('#cli-form').on('submit', function(e) { //use on if jQuery 1.7+
+
+            //prevent form from submitting
+            e.preventDefault();
+
+            // get command
+            var cmd = $('#command').val();
+
+            // echo command
+            consoleAppend(prompt + cmd + "\n");
+
+            if(cmd.length > 0) {
+                // post command
+                postCmd(cmd);
+                // clear command line
+                $('#command').val("");
+            }
+
+        });
+    });
+    </script>
+
+</body>
+</html>

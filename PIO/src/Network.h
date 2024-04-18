@@ -2,6 +2,8 @@
 #define NETWORK_H
 #include <WiFi.h>
 #include <Preferences.h>
+#include "ESPAsyncWebServer.h"
+#include "CLI.h"
 #define MAX_SSID 256
 #define MAX_PW 256
 
@@ -9,10 +11,22 @@ class Network {
     public:
     static boolean initWiFi(char* ssid = NULL, char* password = NULL);
     static void disconnect();
+
+    static boolean initWebCLI(const char* hostName, const char* prompt);
+
     private:
     static char _ssid[MAX_SSID];
     static char _password[MAX_PW];
     static Preferences preferences;
+    static CLIClient* cliClient;
+
+    static String cliHost;
+    static String hostIP;
+    static String cliPrompt;
+    //AsyncWebServer server;
+    static String processor(const String& var);
+    static boolean beginWebCLI();
+
     static void WiFiEvent(WiFiEvent_t event);
 };
 #endif

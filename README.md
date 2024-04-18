@@ -10,14 +10,14 @@ Adapted from: https://github.com/nishad2m8/T-Display-S3-YT
 - Logging with levels
 - interactive WiFi SSID and password configuration (no hard-coded secrets)
 - USB serial CLI with commands for the above
+- Web CLI
 
 
 ## ToDo:
-- Improved battery operation - light sleep
 - Saved preferences
-- Web CLI
 - Dynamic location list (interactive add location)
 - Indicators for lock and format modes
+- Improved battery operation
 
 
 
