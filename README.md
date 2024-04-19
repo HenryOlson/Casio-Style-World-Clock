@@ -19,5 +19,8 @@ Adapted from: https://github.com/nishad2m8/T-Display-S3-YT
 - Indicators for lock and format modes
 - Improved battery operation
 
+## Build
+- Built using PlatformIO
+- Must click on 'Upload Filesystem Image' under PlatformIO 'Project Tasks' to upload CLI web page file
 
 

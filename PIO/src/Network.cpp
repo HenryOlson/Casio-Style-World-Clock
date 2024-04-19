@@ -9,6 +9,7 @@
 #include "RWBufferStream.h"
 
 #define WIFI_KEY "WiFi"
+#define WEB_AUTH_KEY "WebAuth"
 
 // required coupling
 extern CasioClock theClock;
@@ -17,7 +18,8 @@ extern char* fmt(const char* fmt, ...);
 // WiFi configuration
 char Network::_ssid[MAX_SSID];
 char Network::_password[MAX_PW];
-Preferences Network::preferences;
+Preferences Network::prefWiFi;
+Preferences Network::prefWeb;
 
 // web CLI
 String Network::cliHost;
@@ -25,6 +27,8 @@ String Network::hostIP;
 String Network::cliPrompt;
 AsyncWebServer server(80);
 RWBufferStream cliBuffer(200,1500);
+String Network::webID = "admin";
+String Network::webPassword = "p@55";
 
 // page processor
 String Network::processor(const String& var) {
@@ -52,18 +56,35 @@ boolean Network::initWebCLI(const char* hostName, const char* prompt) {
     return false;
   }
 
+    // get Web CLI credentials
+    Logger::verbose("checking saved Web credentials");
+    prefWeb.begin(WEB_AUTH_KEY);
+    String _webID = prefWeb.getString("id");
+    String _webPassword = prefWeb.getString("password");
+    if(_webID.length() > 0 && _webPassword.length() > 0) {
+        webID = _webID;
+        webPassword = _webPassword;
+    } else {
+        Logger::notice("no saved web credentials, using default");
+    }
+    prefWeb.end();
+
   // add CLI client for web server
   cliClient = CLI.addClient(cliBuffer);
 
-  // add route for root / web page
+// add route for root / web page
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     Logger::notice("incoming request for root page");
+    if(!request->authenticate(webID.c_str(), webPassword.c_str()))
+        return request->requestAuthentication();
     request->send(SPIFFS, "/index.html", String(), false, processor);
   });
 
   // add route for command execution
   server.on("/", HTTP_POST, [](AsyncWebServerRequest *request) {
     AsyncWebParameter* cmd;
+    if(!request->authenticate(webID.c_str(), webPassword.c_str()))
+        return request->requestAuthentication();
     if(request->hasParam("cmd", true)) {
         // get cmd parameter and value
         AsyncWebParameter* cmdParm = request->getParam("cmd", true);
@@ -88,8 +109,24 @@ boolean Network::initWebCLI(const char* hostName, const char* prompt) {
   return true;
 }
 
+boolean Network::setWebAuth(char* id, char* password) {
+    webID = id;
+    webPassword = password;
+    // Save web CLI credentials
+    prefWeb.begin(WEB_AUTH_KEY);
+    prefWeb.putString("id", id);
+    prefWeb.putString("password", password);
+    prefWeb.end();
+    return true;
+}
+
 boolean Network::beginWebCLI() {
     server.begin();
+    return true;
+}
+
+boolean Network::endWebCLI() {
+    server.end();
     return true;
 }
 
@@ -138,17 +175,17 @@ void Network::WiFiEvent(WiFiEvent_t event) {
             Logger::notice(fmt("Obtained IP address: %s", hostIP));
 
             // Save network credentials if changed
-            preferences.begin(WIFI_KEY);
-            Logger::verbose(fmt("checking ssid; stored: '%s' current: '%s'", preferences.getString("ssid").c_str(), _ssid));
-            if(strcmp(preferences.getString("ssid").c_str(), _ssid) != 0 ||
-                strcmp(preferences.getString("password").c_str(), _password) != 0) {
+            prefWiFi.begin(WIFI_KEY);
+            Logger::verbose(fmt("checking ssid; stored: '%s' current: '%s'", prefWiFi.getString("ssid").c_str(), _ssid));
+            if(strcmp(prefWiFi.getString("ssid").c_str(), _ssid) != 0 ||
+                strcmp(prefWiFi.getString("password").c_str(), _password) != 0) {
                     Logger::verbose(fmt("saving credentials for %s", _ssid));
-                    preferences.putString("ssid", _ssid);
-                    preferences.putString("password", _password);
-                    preferences.end();
+                    prefWiFi.putString("ssid", _ssid);
+                    prefWiFi.putString("password", _password);
             } else {
                     Logger::verbose(fmt("wifi credentials unchanged for %s", _ssid));
             }
+            prefWiFi.end();
 
             // get network time
             Logger::verbose("getting network time");
@@ -191,11 +228,11 @@ boolean Network::initWiFi(char* ssid, char* password) {
 
     // parameters
     if(ssid == NULL || password == NULL) {
-        // get preferences
+        // get WiFi credentials
         Logger::verbose("loading saved WiFi credentials");
-        preferences.begin(WIFI_KEY);
-        String pSSID = preferences.getString("ssid");
-        String pPASS = preferences.getString("password");
+        prefWiFi.begin(WIFI_KEY);
+        String pSSID = prefWiFi.getString("ssid");
+        String pPASS = prefWiFi.getString("password");
         if(pSSID.length() > 0 && pPASS.length() > 0) {
             strcpy(_ssid, pSSID.c_str());
             strcpy(_password, pPASS.c_str());

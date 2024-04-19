@@ -13,19 +13,24 @@ class Network {
     static void disconnect();
 
     static boolean initWebCLI(const char* hostName, const char* prompt);
+    static boolean setWebAuth(char* id, char* password);
+    static boolean beginWebCLI();
+    static boolean endWebCLI();
 
     private:
     static char _ssid[MAX_SSID];
     static char _password[MAX_PW];
-    static Preferences preferences;
+    static Preferences prefWiFi;
+    static Preferences prefWeb;
     static CLIClient* cliClient;
+    static String webID;
+    static String webPassword;
 
     static String cliHost;
     static String hostIP;
     static String cliPrompt;
     //AsyncWebServer server;
     static String processor(const String& var);
-    static boolean beginWebCLI();
 
     static void WiFiEvent(WiFiEvent_t event);
 };

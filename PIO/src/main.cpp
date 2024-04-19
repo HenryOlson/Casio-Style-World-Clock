@@ -469,6 +469,33 @@ CLI_COMMAND(cliWelcome) {
     return 0;
 }
 
+CLI_COMMAND(cliWeb) {
+    switch(argc) {
+        case 1:
+            // status?
+            return 0;
+        case 2:
+            // on / off
+            if(strcmp(argv[1], "on") == 0) {
+                Network::beginWebCLI();
+                return 0;
+            } else if(strcmp(argv[1], "off") == 0) {
+                Network::endWebCLI();
+                return 0;
+            }
+            break;
+        case 4:
+            // auth id password
+            if(strcmp(argv[1], "auth") == 0) {
+                Network::setWebAuth(argv[2], argv[3]);
+                return 0;
+            }
+
+    }
+    dev->printf("%s: invalid command line", argv[0]);
+    return 1;
+}
+
 /*
  * Arduino core
  */
@@ -526,6 +553,7 @@ void setup() {
     CLI.addCommand("update", cliNtpUpdate, "update time from network (NTP)");
     CLI.addCommand("fps", cliFPS, "show display update FPS");
     CLI.addCommand("uptime", cliUptime, "show uptime");
+    CLI.addCommand("web", cliWeb, "control web CLI", "web [ on | off | auth {id} {password} ]");
     CLI.addCommand("reboot", cliReboot, "reboot the clock");
     CLI.onConnect(cliWelcome);
     CLI.addClient(Serial);
