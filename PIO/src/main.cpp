@@ -155,7 +155,7 @@ CLI_COMMAND(cliUptime) {
 
     // hrs
     upTime = upTime / 60;
-    int hrs = upTime % 60;
+    int hrs = upTime % 24;
 
     // days
     int days = upTime / 24;
@@ -181,12 +181,39 @@ const char* setModeHelp = "\
 mode without arguments advances to next mode"
 ;
 CLI_COMMAND(cliSetMode) {
-    return theClock.setMode(argc, argv);
+    // Set the current action mode if a parmeter was provided
+    int theMode = theClock.getMode();
+    switch(argc) {
+        case 1:
+            // advance to the next mode
+            theClock.setMode(-1);
+            break;
+        case 2:
+            if(strcmp(argv[1], "lock") == 0) {
+                theMode = 0;
+            } else if(strcmp(argv[1], "map") == 0) {
+                theMode = 1;
+            } else if(strcmp(argv[1], "prime") == 0) {
+                theMode = 2;
+            } else if(strcmp(argv[1], "format") == 0) {
+                theMode = 3;
+            } else if(strcmp(argv[1], "color") == 0) {
+                theMode = 4;
+            } else if(strcmp(argv[1], "next") == 0) {
+                theMode = ++theMode % 5;
+            } else {
+                Logger::error(fmt("invalid mode'%s'", argv[1]));
+                return 1;
+            }
+            break;
+    }
+    theClock.setMode(theMode);
+    return 0;
 }
 
 // advance to the next setting in the current mode
 CLI_COMMAND(cliNextSetting) {
-    theClock.nextSetting(argc, argv);
+    theClock.nextSetting();
     return 0;
 }
 
@@ -216,7 +243,40 @@ CLI_COMMAND(cliSetLocation) {
 }
 
 CLI_COMMAND(cliSetFormat) {
-    return theClock.changeTimeFormat(argc, argv);
+    int rval = 0;
+    switch(argc) {
+        case 0:
+            // null arguments - button push - advance to next setting
+            theClock.setTimeFormat(0);
+            break;
+        case 1:
+            // no command arguments - just show the setting
+            break;
+        case 2:
+            // 2 arguments - show or set the time format
+            if(strcmp(argv[1], "show") == 0) {
+                    // fall through to show
+            } else {
+                int which = atoi(argv[1]);
+                switch(which) {
+                    case 12:
+                    case 24:
+                        theClock.setTimeFormat(which);
+                        break;
+                    default:
+                        Logger::error(fmt("%s: invalid time format %s", argv[0], argv[1]));
+                        return 1;
+                }
+            }
+            break;
+        default:
+            // extra arguments
+            Logger::error(fmt("%s: too many arguments (%d)", argv[0], argc));
+            return 2;
+    }
+    // show the format
+    Logger::notice(fmt("time format %d", theClock.getTimeFormat()));
+    return 0;
 }
 
 // reboot the device

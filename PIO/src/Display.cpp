@@ -165,7 +165,7 @@ void Display::init() {
 }
 
 
-void Display::changeBG() {
+boolean Display::changeBG() {
     static boolean bgVisible = false;
     delay(5);
     // Code for changeBG
@@ -184,6 +184,7 @@ void Display::changeBG() {
     // Toggle the visibility state
     bgVisible = !bgVisible;
     delay(5);
+    return bgVisible;
 }
 
 

@@ -34,9 +34,11 @@ int refresh();
 boolean setDisplay(int turnOn = -1);
 
 // control
-int setMode(int argc = 0, char* argv[] = NULL);
-int nextSetting(int argc = 0, char* argv[] = NULL);
-int changeTimeFormat(int argc = 0, char* argv[] = NULL);
+int getMode();
+void setMode(int newMode = -1);
+void nextSetting();
+int setTimeFormat(int format = 0);
+int getTimeFormat();
 
 // info
 String lvglVersion();

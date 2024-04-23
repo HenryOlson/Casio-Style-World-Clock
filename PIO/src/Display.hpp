@@ -24,7 +24,7 @@ class Display {
     // mutators
     void setMapLocation(Location* newLocation);
     void setPrimeLocation(Location* newLocation);
-    void changeBG();
+    boolean changeBG();
     // info
     String lvglVersion();
 
