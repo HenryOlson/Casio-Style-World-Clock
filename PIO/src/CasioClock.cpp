@@ -33,6 +33,7 @@ int primeLocationIx = 0;
 Display* display;
 int currentMode = 0;  // 0: Lock, 1: changeMapTime, 1: changePrimeTime, 2: changeBG
 int timeFormat = 12;
+Preferences prefClock;
 
 CasioClock::CasioClock() {
     currentMode = 0;
@@ -54,6 +55,12 @@ void CasioClock::localize() {
 
 void CasioClock::init() {
     display->init();
+    prefClock.begin("clock");
+    if(prefClock.isKey("format")) {
+        int format = prefClock.getInt("format");
+        setTimeFormat(format);
+    }
+    prefClock.end();
 }
 
 void CasioClock::idle() {
@@ -150,6 +157,9 @@ int CasioClock::setTimeFormat(int format) {
         case 12:
         case 24:
             display->timeFormat = format;
+            prefClock.begin("clock");
+            prefClock.putInt("format", format);
+            prefClock.end();
             break;
         default:
             Logger::error(fmt("setTimeFormat: invalid time format %d", format));

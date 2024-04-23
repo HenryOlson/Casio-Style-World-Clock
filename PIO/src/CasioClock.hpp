@@ -1,6 +1,7 @@
 #include <WiFiUdp.h>
 #include <NTPClient.h>
 #include <Logger.h>
+#include <Preferences.h>
 #include "Locations.h"
 #include "Display.hpp"
 
@@ -49,5 +50,6 @@ int mapLocationIx = 1;
 int primeLocationIx = 0;
 Display* display;
 int currentMode = 0;
+Preferences prefClock;
 
 };
