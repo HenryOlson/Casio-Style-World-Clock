@@ -3,6 +3,7 @@
  */
 #include <Arduino.h>
 #include <Logger.h>
+#include <ESPmDNS.h>
 #include "Network.h"
 #include "CasioClock.hpp"
 #include "SPIFFS.h"
@@ -158,6 +159,12 @@ void Network::WiFiEvent(WiFiEvent_t event) {
 
         case ARDUINO_EVENT_WIFI_STA_CONNECTED:
             Logger::notice("Connected to access point");
+            if(!MDNS.begin(cliHost)) {
+                Logger::error("unable to start mDNS");
+            } else {
+                MDNS.addService("http", "tcp", 80);
+                Logger::notice("mDNS started");
+            }
             break;
 
         case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:

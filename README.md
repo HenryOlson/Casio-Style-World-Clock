@@ -14,7 +14,6 @@ Adapted from: https://github.com/nishad2m8/T-Display-S3-YT
 
 
 ## ToDo:
-- MDNS (Bonjour)
 - Dynamic location list (interactive add location)
 - Indicators for lock and format modes
 - Improved battery operation
