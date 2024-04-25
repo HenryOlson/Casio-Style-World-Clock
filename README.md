@@ -1,7 +1,7 @@
 # Casio Style World Clock for T-Display-S3
 Adapted from: https://github.com/nishad2m8/T-Display-S3-YT  
 \
-I was inspired by Nishad's excellent design to add some additional functionality to improve configurability and timekeeping.  
+I was inspired by Nishad's excellent design to add additional functionality improving configurability and timekeeping.  
 
 ---
 <img src="Assets/02-Casio-Style-World-Clock.jpg" width="640" height="320">
