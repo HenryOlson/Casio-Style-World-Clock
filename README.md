@@ -32,8 +32,8 @@ I was inspired by Nishad's excellent design to add some additional functionality
 
 ## CLI Commands
 ```
-log                  - control logging, usage: log (on, off, level {level}
-mode                 - change modes, usage: mode (lock,map,prime,format,color), default next
+log                  - control logging, usage: log [ on | off | level {level} ]
+mode                 - change modes, usage: mode [lock | map | prime | format | color], default next
 next                 - choose next setting in current mode
 location             - set location for clock, usage: location [ map | prime ] {code}
 format               - set time format, usage: format [ show | 12 | 24 ]
@@ -47,6 +47,6 @@ cpu                  - show or set cpu speed, usage: cpu [ show | fast | slow ]
 update               - update time from network (NTP)
 fps                  - show display update FPS
 uptime               - show uptime
-web                  - control web CLI, usage: web [ on | off | auth {id} {password} ]
+web                  - control web CLI, web [ on | enable | off | disable | auth {id} {password} ]
 reboot               - reboot the clock
 ```

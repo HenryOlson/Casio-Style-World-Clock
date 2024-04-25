@@ -12,10 +12,11 @@ class Network {
     static boolean initWiFi(char* ssid = NULL, char* password = NULL);
     static void disconnect();
 
+    static boolean webCLIEnabled;
     static boolean initWebCLI(const char* hostName, const char* prompt);
     static boolean setWebAuth(char* id, char* password);
-    static boolean beginWebCLI();
-    static boolean endWebCLI();
+    static boolean enableWebCLI();
+    static boolean disableWebCLI();
 
     private:
     static char _ssid[MAX_SSID];

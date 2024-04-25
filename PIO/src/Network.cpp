@@ -46,18 +46,18 @@ String Network::processor(const String& var) {
 CLIClient* Network::cliClient;
 boolean Network::initWebCLI(const char* hostName, const char* prompt) {
 
-  cliHost = String(hostName);
-  cliPrompt = String(prompt);
+    cliHost = String(hostName);
+    cliPrompt = String(prompt);
 
-  Logger::notice("Initializing Web CLI");
+    Logger::notice("Initializing Web CLI");
 
-  // Initialize SPIFFS
-  if(!SPIFFS.begin(true)){
-    Logger::error("An Error has occurred while mounting SPIFFS");
-    return false;
-  }
+    // Initialize SPIFFS
+    if(!SPIFFS.begin(true)){
+        Logger::error("An Error has occurred while mounting SPIFFS");
+        return false;
+    }
 
-    // get Web CLI credentials
+    // get Web CLI credentials and status
     Logger::verbose("checking saved Web credentials");
     prefWeb.begin(WEB_AUTH_KEY);
     String _webID = prefWeb.getString("id");
@@ -68,44 +68,19 @@ boolean Network::initWebCLI(const char* hostName, const char* prompt) {
     } else {
         Logger::notice("no saved web credentials, using default");
     }
+    if(prefWeb.isKey("enabled")) {
+        webCLIEnabled = prefWeb.getBool("enabled");
+    }
     prefWeb.end();
 
-  // add CLI client for web server
-  cliClient = CLI.addClient(cliBuffer);
+    // add CLI client for web server
+    cliClient = CLI.addClient(cliBuffer);
 
-// add route for root / web page
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    Logger::notice("incoming request for root page");
-    if(!request->authenticate(webID.c_str(), webPassword.c_str()))
-        return request->requestAuthentication();
-    request->send(SPIFFS, "/index.html", String(), false, processor);
-  });
-
-  // add route for command execution
-  server.on("/", HTTP_POST, [](AsyncWebServerRequest *request) {
-    AsyncWebParameter* cmd;
-    if(!request->authenticate(webID.c_str(), webPassword.c_str()))
-        return request->requestAuthentication();
-    if(request->hasParam("cmd", true)) {
-        // get cmd parameter and value
-        AsyncWebParameter* cmdParm = request->getParam("cmd", true);
-        String cmdString = request->urlDecode(cmdParm->value());
-        Logger::notice(fmt("WiFi CLI - request: '%s'", cmdString));
-
-        // prepare buffer for CLI processing
-        cliBuffer.setInput(fmt("%s\n", (char*)cmdString.c_str()));
-        cliClient->echo(false);
-
-        // process the command
-        CLI.process();
-
-        char* resp = cliBuffer.getOutput();
-        request->send(200, "text/plain", resp);
-        cliBuffer.reset();
-        
-        Logger::verbose(fmt("WiFi CLI - response: '%s'", resp));
+    if(webCLIEnabled) {
+        enableWebCLI();
+    } else {
+        disableWebCLI();
     }
-  });
 
   return true;
 }
@@ -121,13 +96,71 @@ boolean Network::setWebAuth(char* id, char* password) {
     return true;
 }
 
-boolean Network::beginWebCLI() {
-    server.begin();
+boolean Network::webCLIEnabled = true;
+boolean Network::enableWebCLI() {
+
+    // clear server routes
+    server.reset();
+
+    // add route for root / web page
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+        Logger::notice("incoming request for CLI page");
+        if(!request->authenticate(webID.c_str(), webPassword.c_str())) {
+            Logger::notice("requesting authentication");
+            return request->requestAuthentication();
+        }
+        request->send(SPIFFS, "/index.html", String(), false, processor);
+    });
+
+    // add route for command execution
+    server.on("/", HTTP_POST, [](AsyncWebServerRequest *request) {
+        AsyncWebParameter* cmd;
+        if(!request->authenticate(webID.c_str(), webPassword.c_str()))
+            return request->requestAuthentication();
+        if(request->hasParam("cmd", true)) {
+            // get cmd parameter and value
+            AsyncWebParameter* cmdParm = request->getParam("cmd", true);
+            String cmdString = request->urlDecode(cmdParm->value());
+            Logger::notice(fmt("WiFi CLI - request: '%s'", cmdString));
+
+            // prepare buffer for CLI processing
+            cliBuffer.setInput(fmt("%s\n", (char*)cmdString.c_str()));
+            cliClient->echo(false);
+
+            // process the command
+            CLI.process();
+
+            char* resp = cliBuffer.getOutput();
+            request->send(200, "text/plain", resp);
+            cliBuffer.reset();
+            
+            Logger::verbose(fmt("WiFi CLI - response: '%s'", resp));
+        }
+    });
+
+    Logger::notice("enabled Web CLI");
+    webCLIEnabled = true;
+    prefWeb.begin(WEB_AUTH_KEY);
+    prefWeb.putBool("enabled", webCLIEnabled);
+    prefWeb.end();
     return true;
 }
 
-boolean Network::endWebCLI() {
-    server.end();
+boolean Network::disableWebCLI() {
+
+    // clear server routes
+    server.reset();
+
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+        Logger::notice("incoming request for CLI page, not available");
+        request->send(503, "text/plain", "CLI Unavailable");
+    });
+
+    Logger::notice("disabled Web CLI");
+    webCLIEnabled = false;
+    prefWeb.begin(WEB_AUTH_KEY);
+    prefWeb.putBool("enabled", webCLIEnabled);
+    prefWeb.end();
     return true;
 }
 
@@ -215,7 +248,7 @@ void Network::WiFiEvent(WiFiEvent_t event) {
             theClock.localize();
 
             Logger::verbose("Starting Web CLI");
-            Network::beginWebCLI();
+            server.begin();
             Logger::notice("Started Web CLI");
 
             Logger::verbose("end WiFi IP event");

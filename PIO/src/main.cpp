@@ -532,28 +532,34 @@ CLI_COMMAND(cliWelcome) {
 CLI_COMMAND(cliWeb) {
     switch(argc) {
         case 1:
-            // status?
-            return 0;
+            // status
+            break;
         case 2:
-            // on / off
-            if(strcmp(argv[1], "on") == 0) {
-                Network::beginWebCLI();
-                return 0;
-            } else if(strcmp(argv[1], "off") == 0) {
-                Network::endWebCLI();
-                return 0;
+            // on / off - enable / disable
+            if(strcmp(argv[1], "on") == 0 || strcmp(argv[1], "enable") == 0) {
+                Network::enableWebCLI();
+            } else if(strcmp(argv[1], "off") == 0 || strcmp(argv[1], "disable") == 0) {
+                Network::disableWebCLI();
+            } else if(strcmp(argv[1], "status") != 0) {
+                dev->printf("%s: invalid command '%s'", argv[0], argv[1]);
+                return 1;
             }
             break;
         case 4:
             // auth id password
             if(strcmp(argv[1], "auth") == 0) {
                 Network::setWebAuth(argv[2], argv[3]);
-                return 0;
+            } else {
+                dev->printf("%s: invalid command '%s'", argv[0], argv[1]);
+                return 2;
             }
+        default:
+            dev->printf("%s: invalid command line", argv[0]);
 
     }
-    dev->printf("%s: invalid command line", argv[0]);
-    return 1;
+    // status
+    dev->println((Network::webCLIEnabled ? "Enabled" : "Disabled"));
+    return 0;
 }
 
 /*
@@ -598,8 +604,8 @@ void setup() {
     // configure CLI commands
     CLI.setDefaultPrompt("clock> ");
     //CLI.onConnect(cliOnConnect);
-    CLI.addCommand("log", cliSetLog, "control logging", "log (on, off, level {level}");
-    CLI.addCommand("mode", cliSetMode, "change modes", "mode (lock,map,prime,format,color), default next", setModeHelp);
+    CLI.addCommand("log", cliSetLog, "control logging", "log [ on | off | level {level} ]");
+    CLI.addCommand("mode", cliSetMode, "change modes", "mode [ lock | map | prime | format | color ], default next", setModeHelp);
     CLI.addCommand("next", cliNextSetting, "choose next setting in current mode");
     CLI.addCommand("location", cliSetLocation, "set location for clock", "location [ map | prime ] {code}");
     CLI.addCommand("format", cliSetFormat, "set time format", "format [ show | 12 | 24 ]");
@@ -613,7 +619,7 @@ void setup() {
     CLI.addCommand("update", cliNtpUpdate, "update time from network (NTP)");
     CLI.addCommand("fps", cliFPS, "show display update FPS");
     CLI.addCommand("uptime", cliUptime, "show uptime");
-    CLI.addCommand("web", cliWeb, "control web CLI", "web [ on | off | auth {id} {password} ]");
+    CLI.addCommand("web", cliWeb, "control web CLI", "web [ on | enable | off | disable | auth {id} {password} ]");
     CLI.addCommand("reboot", cliReboot, "reboot the clock");
     CLI.onConnect(cliWelcome);
     CLI.addClient(Serial);
